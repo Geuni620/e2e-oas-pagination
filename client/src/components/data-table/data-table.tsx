@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Checkbox } from "./checkbox";
 import { columns } from "./column";
 import {
   useReactTable,
@@ -16,6 +17,13 @@ import {
   Virtualizer,
 } from "@tanstack/react-virtual";
 
+const mergeableColumns = [
+  "boxCount",
+  "shippingMethod",
+  "productTemperature",
+  "configurationCount",
+];
+
 interface Product {
   id: string;
   name: string;
@@ -26,6 +34,34 @@ interface TableBodyProps {
   table: Table<Product>;
   tableContainerRef: React.RefObject<HTMLDivElement | null>;
 }
+
+// 연속된 동일 값을 가진 행들의 그룹을 찾는 함수
+const findGroupedRows = (
+  currentRow: Row<Product>,
+  rows: Row<Product>[],
+  currentIndex: number
+) => {
+  const groupRows = [currentRow];
+  let nextIndex = currentIndex + 1;
+
+  while (nextIndex < rows.length) {
+    const nextRow = rows[nextIndex];
+    let isSameValues = true;
+
+    for (const colId of mergeableColumns) {
+      if (currentRow.getValue(colId) !== nextRow.getValue(colId)) {
+        isSameValues = false;
+        break;
+      }
+    }
+
+    if (!isSameValues) break;
+    groupRows.push(nextRow);
+    nextIndex++;
+  }
+
+  return groupRows;
+};
 
 const TableBody = ({ table, tableContainerRef }: TableBodyProps) => {
   const { rows } = table.getRowModel();
@@ -48,12 +84,21 @@ const TableBody = ({ table, tableContainerRef }: TableBodyProps) => {
     >
       {rowVirtualizer.getVirtualItems().map((virtualRow) => {
         const row = rows[virtualRow.index] as Row<Product>;
+        const previousRow =
+          virtualRow.index > 0
+            ? (rows[virtualRow.index - 1] as Row<Product>)
+            : null;
+        const groupedRows = findGroupedRows(row, rows, virtualRow.index);
+
         return (
           <TableRow
             key={row.id}
             row={row}
+            previousRow={previousRow}
             virtualRow={virtualRow}
             rowVirtualizer={rowVirtualizer}
+            groupedRows={groupedRows}
+            table={table}
           />
         );
       })}
@@ -63,11 +108,47 @@ const TableBody = ({ table, tableContainerRef }: TableBodyProps) => {
 
 interface TableRowProps {
   row: Row<Product>;
+  previousRow: Row<Product> | null;
   virtualRow: VirtualItem;
   rowVirtualizer: Virtualizer<HTMLDivElement, HTMLTableRowElement>;
+  groupedRows: Row<Product>[];
+  table: Table<Product>;
 }
 
-const TableRow = ({ row, virtualRow, rowVirtualizer }: TableRowProps) => {
+const TableRow = ({
+  row,
+  previousRow,
+  virtualRow,
+  rowVirtualizer,
+  groupedRows,
+}: TableRowProps) => {
+  const shouldHideValue = (cell: any) => {
+    if (!previousRow || !mergeableColumns.includes(cell.column.id)) {
+      return false;
+    }
+
+    for (const colId of mergeableColumns) {
+      const prevValue = previousRow.getValue(colId);
+      const currentValue = row.getValue(colId);
+      if (prevValue !== currentValue) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const isGroupStart =
+    !previousRow ||
+    mergeableColumns.some(
+      (colId) => row.getValue(colId) !== previousRow.getValue(colId)
+    );
+
+  const handleGroupSelect = (checked: boolean) => {
+    groupedRows.forEach((groupRow) => {
+      groupRow.toggleSelected(checked);
+    });
+  };
+
   return (
     <tr
       data-index={virtualRow.index}
@@ -78,18 +159,41 @@ const TableRow = ({ row, virtualRow, rowVirtualizer }: TableRowProps) => {
         transform: `translateY(${virtualRow.start}px)`,
         width: "100%",
       }}
+      className={isGroupStart ? "border-t border-gray-200" : ""}
     >
-      {row.getVisibleCells().map((cell) => (
-        <td
-          key={cell.id}
-          style={{
-            display: "flex",
-            width: cell.column.getSize(),
-          }}
-        >
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </td>
-      ))}
+      {row.getVisibleCells().map((cell) => {
+        const isCheckboxCell = cell.column.id === "select";
+        const shouldHide = !isCheckboxCell && shouldHideValue(cell);
+
+        return (
+          <td
+            key={cell.id}
+            style={{
+              display: "flex",
+              width: cell.column.getSize(),
+              minHeight: "35px",
+              border: "0.2px solid #e0e0e0",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {isCheckboxCell && isGroupStart ? (
+              <Checkbox
+                checked={groupedRows.every((r) => r.getIsSelected())}
+                onCheckedChange={handleGroupSelect}
+                aria-label="그룹 선택"
+                className="h-4 w-4"
+              />
+            ) : isCheckboxCell ? null : shouldHide ? (
+              <div className="text-sm opacity-0">
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </div>
+            ) : (
+              flexRender(cell.column.columnDef.cell, cell.getContext())
+            )}
+          </td>
+        );
+      })}
     </tr>
   );
 };
