@@ -2,60 +2,24 @@ import { useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
+  getSortedRowModel,
   flexRender,
+  ColumnDef,
 } from "@tanstack/react-table";
 import { columns } from "./column";
 
-// 데이터 타입 정의
-type OrderData = {
-  id: number;
-  boxCount: number;
-  shippingMethod: string;
-  productName: string;
+type DataTableProps<T> = {
+  data: T[];
 };
 
-// 샘플 데이터 생성
-const sampleData: OrderData[] = [
-  {
-    id: 1,
-    boxCount: 3,
-    shippingMethod: "택배",
-    productName: "프리미엄 커피 원두",
-  },
-  {
-    id: 2,
-    boxCount: 1,
-    shippingMethod: "퀵배송",
-    productName: "유기농 녹차",
-  },
-  {
-    id: 3,
-    boxCount: 5,
-    shippingMethod: "택배",
-    productName: "홍차 세트",
-  },
-  {
-    id: 4,
-    boxCount: 2,
-    shippingMethod: "방문수령",
-    productName: "다과 선물세트",
-  },
-  {
-    id: 5,
-    boxCount: 4,
-    shippingMethod: "택배",
-    productName: "과일 바구니",
-  },
-];
-
-export const DataTable = () => {
-  // 선택된 행들을 관리하기 위한 상태
+export const DataTable = <T,>({ data }: DataTableProps<T>) => {
   const [rowSelection, setRowSelection] = useState({});
 
   const table = useReactTable({
-    columns,
-    data: sampleData,
+    columns: columns as ColumnDef<T>[],
+    data: data,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,

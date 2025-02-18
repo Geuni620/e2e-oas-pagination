@@ -1,15 +1,17 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "./checkbox.tsx";
 
-export const columns: ColumnDef<any>[] = [
-  {
-    id: "number",
-    header: "No.",
-    cell: ({ row }) => (
-      <div className="text-sm text-gray-600">{row.index + 1}</div>
-    ),
-    enableSorting: false,
-  },
+type Product = {
+  id: string;
+  boxCount: number;
+  shippingMethod: string;
+  productTemperature: string;
+  configurationCount: number;
+  productCode: string;
+  productName: string;
+};
+
+export const columns: ColumnDef<Product>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -28,7 +30,6 @@ export const columns: ColumnDef<any>[] = [
         className="h-4 w-4"
       />
     ),
-    enableSorting: false,
   },
   {
     accessorKey: "boxCount",
@@ -42,6 +43,27 @@ export const columns: ColumnDef<any>[] = [
     header: "배송방식",
     cell: ({ row }) => (
       <div className="text-sm">{row.getValue("shippingMethod")}</div>
+    ),
+  },
+  {
+    accessorKey: "productTemperature",
+    header: "상품온도",
+    cell: ({ row }) => (
+      <div className="text-sm">{row.getValue("productTemperature")}</div>
+    ),
+  },
+  {
+    accessorKey: "configurationCount",
+    header: "구성 수",
+    cell: ({ row }) => (
+      <div className="text-sm">{row.getValue("configurationCount")}</div>
+    ),
+  },
+  {
+    accessorKey: "productCode",
+    header: "상품코드",
+    cell: ({ row }) => (
+      <div className="text-sm">{row.getValue("productCode")}</div>
     ),
   },
   {
