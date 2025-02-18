@@ -1,11 +1,10 @@
 import "./App.css";
+import { DataTable } from "./components/data-table/data-table";
 
 const App = () => {
   return (
-    <div className="content">
-      <h1 className="font-bold underline">Hello world!</h1>
-
-      <p>Start building amazing things with Rsbuild.</p>
+    <div>
+      <DataTable />
     </div>
   );
 };
