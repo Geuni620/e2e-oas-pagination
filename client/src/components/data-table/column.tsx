@@ -33,7 +33,20 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "boxCount",
-    header: "박스 수",
+    header: ({ column }) => {
+      return (
+        <button
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="flex items-center gap-2"
+        >
+          박스 수
+          {{
+            asc: " ↑",
+            desc: " ↓",
+          }[column.getIsSorted() as string] ?? null}
+        </button>
+      );
+    },
     cell: ({ row }) => (
       <div className="text-sm">{row.getValue("boxCount")}</div>
     ),
@@ -47,7 +60,22 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "productTemperature",
-    header: "상품온도",
+
+    header: ({ column }) => {
+      return (
+        <button
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="flex items-center gap-2"
+        >
+          상품온도
+          {{
+            asc: " ↑",
+            desc: " ↓",
+          }[column.getIsSorted() as string] ?? null}
+        </button>
+      );
+    },
+    enableSorting: true,
     cell: ({ row }) => (
       <div className="text-sm">{row.getValue("productTemperature")}</div>
     ),
@@ -58,7 +86,6 @@ export const columns: ColumnDef<Product>[] = [
       }
 
       const rowValue = String(row.getValue(id));
-      console.log("rowValue", rowValue);
 
       return rowValue.toLowerCase() === String(filterValue).toLowerCase();
     },
