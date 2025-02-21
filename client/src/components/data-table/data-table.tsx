@@ -1,8 +1,10 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Checkbox } from "./checkbox";
 import { columns } from "./column";
+import { ColumnFiltersState, Column } from "@tanstack/react-table";
 import {
   useReactTable,
+  getFilteredRowModel,
   getCoreRowModel,
   getSortedRowModel,
   flexRender,
@@ -200,6 +202,7 @@ const TableRow = ({
 
 export const DataTable = ({ data }: { data: Product[] }) => {
   const [rowSelection, setRowSelection] = useState({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "boxCount", desc: false },
     { id: "shippingMethod", desc: false },
@@ -214,12 +217,19 @@ export const DataTable = ({ data }: { data: Product[] }) => {
     columns: columns as ColumnDef<Product>[],
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     state: {
       rowSelection,
       sorting,
+      columnFilters,
     },
+
+    debugTable: true,
+    debugHeaders: true,
+    debugColumns: false,
   });
 
   return (
@@ -248,18 +258,25 @@ export const DataTable = ({ data }: { data: Product[] }) => {
                 style={{ display: "flex", width: "100%" }}
               >
                 {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    style={{
-                      display: "flex",
-                      width: header.getSize(),
-                    }}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </th>
+                  <div className="">
+                    <th
+                      key={header.id}
+                      style={{
+                        display: "flex",
+                        width: header.getSize(),
+                      }}
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </th>
+                    {header.column.getCanFilter() ? (
+                      <div>
+                        <Filter column={header.column} />
+                      </div>
+                    ) : null}
+                  </div>
                 ))}
               </tr>
             ))}
@@ -270,6 +287,97 @@ export const DataTable = ({ data }: { data: Product[] }) => {
       <div className="mt-4">
         선택된 항목: {Object.keys(rowSelection).length}
       </div>
+      <div className="mt-4">
+        <div>선택된 항목: {Object.keys(rowSelection).length}</div>
+        <pre className="mt-2 p-4 bg-gray-100 rounded overflow-auto">
+          {JSON.stringify(table.getFilteredSelectedRowModel().rows, null, 2)}
+        </pre>
+      </div>
     </div>
   );
 };
+
+function Filter({ column }: { column: Column<any, unknown> }) {
+  const columnFilterValue = column.getFilterValue();
+  const { filterVariant } = column.columnDef.meta ?? {};
+  console.log(filterVariant);
+
+  return filterVariant === "range" ? (
+    <div>
+      <div className="flex space-x-2">
+        {/* See faceted column filters example for min max values functionality */}
+        <DebouncedInput
+          type="number"
+          value={(columnFilterValue as [number, number])?.[0] ?? ""}
+          onChange={(value) =>
+            column.setFilterValue((old: [number, number]) => [value, old?.[1]])
+          }
+          placeholder={`Min`}
+          className="w-24 border shadow rounded"
+        />
+        <DebouncedInput
+          type="number"
+          value={(columnFilterValue as [number, number])?.[1] ?? ""}
+          onChange={(value) =>
+            column.setFilterValue((old: [number, number]) => [old?.[0], value])
+          }
+          placeholder={`Max`}
+          className="w-24 border shadow rounded"
+        />
+      </div>
+      <div className="h-1" />
+    </div>
+  ) : filterVariant === "select" ? (
+    <select
+      onChange={(e) => column.setFilterValue(e.target.value)}
+      value={columnFilterValue?.toString()}
+    >
+      {/* See faceted column filters example for dynamic select options */}
+      <option value="">All</option>
+      <option value="complicated">complicated</option>
+      <option value="relationship">relationship</option>
+      <option value="single">single</option>
+    </select>
+  ) : (
+    <DebouncedInput
+      className="w-36 border shadow rounded"
+      onChange={(value) => column.setFilterValue(value)}
+      placeholder={`Search...`}
+      type="text"
+      value={(columnFilterValue ?? "") as string}
+    />
+  );
+}
+
+function DebouncedInput({
+  value: initialValue,
+  onChange,
+  debounce = 500,
+  ...props
+}: {
+  value: string | number;
+  onChange: (value: string | number) => void;
+  debounce?: number;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">) {
+  const [value, setValue] = React.useState(initialValue);
+
+  React.useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value);
+    }, debounce);
+
+    return () => clearTimeout(timeout);
+  }, [value]);
+
+  return (
+    <input
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+  );
+}

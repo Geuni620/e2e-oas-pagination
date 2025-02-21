@@ -51,6 +51,17 @@ export const columns: ColumnDef<Product>[] = [
     cell: ({ row }) => (
       <div className="text-sm">{row.getValue("productTemperature")}</div>
     ),
+    filterFn: (row, id, filterValue) => {
+      // filterValue가 없으면 모든 행 표시
+      if (!filterValue) {
+        return true;
+      }
+
+      const rowValue = String(row.getValue(id));
+      console.log("rowValue", rowValue);
+
+      return rowValue.toLowerCase() === String(filterValue).toLowerCase();
+    },
   },
   {
     accessorKey: "configurationCount",
