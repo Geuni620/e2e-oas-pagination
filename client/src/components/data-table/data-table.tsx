@@ -203,12 +203,7 @@ const TableRow = ({
 export const DataTable = ({ data }: { data: Product[] }) => {
   const [rowSelection, setRowSelection] = useState({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "boxCount", desc: false },
-    { id: "shippingMethod", desc: false },
-    { id: "productTemperature", desc: false },
-    { id: "configurationCount", desc: false },
-  ]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
