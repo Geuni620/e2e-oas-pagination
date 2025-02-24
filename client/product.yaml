@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Hono
+  description: API for greeting users
+  version: 1.0.0
+servers:
+  - url: http://localhost:8787
+    description: Local server
+paths:
+  /api/products:
+    get:
+      responses:
+        "200":
+          description: 제품 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsResponse"
+      operationId: getApiProducts
+      tags:
+        - products
+      summary: 모든 제품 목록 조회
+      parameters: []
+components:
+  schemas:
+    ProductsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+      required:
+        - data
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        boxCount:
+          type: number
+          example: 10
+        shippingMethod:
+          type: string
+          example: 택배
+        productTemperature:
+          type: string
+          example: 상온
+        configurationCount:
+          type: number
+          example: 1
+        productCode:
+          type: string
+          example: "1234567890"
+        productName:
+          type: string
+          example: Product 1
+      required:
+        - id
+        - boxCount
+        - shippingMethod
+        - productTemperature
+        - configurationCount
+        - productCode
+        - productName
