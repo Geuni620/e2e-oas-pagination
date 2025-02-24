@@ -5,6 +5,7 @@ export default {
       target: "./src/api/product.ts",
       schemas: "./src/model",
       client: "fetch",
+      baseUrl: "http://localhost:8787",
     },
     input: {
       target: "./product.yaml",
